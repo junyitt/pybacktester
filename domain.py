@@ -31,14 +31,15 @@ class Portfolio:
         sum = self.get_total_value()
         return '%s : Stock value: %s, Cash: %s, Total %s' % (date, sum-self.balance, self.balance, sum)
 
+    def value_summary_print(self, date):
+        sum = self.get_total_value()
+        return f"{date},{sum}"
+
     def get_total_value(self):
         sum = 0
         for stock in self._portfolio.values():
             sum += stock['Shares'] * stock['Price']
         return sum
-
-    def get_value(self, ticker):
-        return self.get_shares(ticker) * self.get_shares(ticker)
 
     def get_price(self, ticker):
         return self._portfolio[ticker]['Price']
