@@ -11,7 +11,7 @@ class Algorithm:
     def __init__(self):
         self._averages = {}
         self._lambda = .5
-        self._fee_estimate = lambda x : x*.04+10
+        # self._fee_estimate = lambda x : x*.04+10
         self._updates = 0
         self._price_window = 20
         self._trend = np.zeros(self._price_window)

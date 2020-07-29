@@ -14,14 +14,16 @@ class OrderApi:
         self._prob_of_failure = .0001
         self._fee = .02
         self._fixed_fee = 10
-        self._calculate_fee = lambda x : self._fee*abs(x) + self._fixed_fee
+        # self._calculate_fee = lambda x : self._fee*abs(x) + self._fixed_fee
 
     def process_order(self, order):
         slippage = np.random.normal(0, self._slippage_std, size=1)[0]
 
         if np.random.choice([False, True], p=[self._prob_of_failure, 1 -self._prob_of_failure],size=1)[0]:
             trade_fee = self._fee*order[1]*(1+slippage)*order[2]
-            return (order[0], order[1]*(1+slippage), order[2], self._calculate_fee(trade_fee))
+            # return (order[0], order[1]*(1+slippage), order[2], self._calculate_fee(trade_fee))
+            receipt = (order[0], order[1]*(1+slippage), order[2], 0.0)
+            return receipt
 
 
 class DataSource:
@@ -31,6 +33,7 @@ class DataSource:
     '''
     def __init__(self, source='yahoo', tickers=['GOGL','AAPL'], start = dt.datetime(2016,1,1), end=dt.datetime.today()):
         self._logger = logging.getLogger(__name__)
+        print(__name__)
         self.set_source(source = source, tickers= tickers, start=start, end=end)
 
     @classmethod
@@ -67,7 +70,7 @@ class DataSource:
 
         self._source = events
 
-        self._logger.info('Loaded data!')
+        self._logger.info('Loaded data ALREADY!')
 
     def get_data(self):
         try:
@@ -85,6 +88,7 @@ class Controller:
     @classmethod
     def backtest(cls, queue, controller = None):
         controller = cls() if controller is None else controller
+
         try:
             while True:
                 if not queue.empty():
@@ -114,10 +118,13 @@ class Controller:
 
                         controller._logger.info(controller._portfolio.value_summary(timestamp))
 
+                    print(controller._portfolio.value_summary_print(timestamp))
+
         except Exception as e:
             print(e)
         finally:
             controller._logger.info(controller._portfolio.value_summary(None))
+            print(controller._portfolio.value_summary_print(None))
 
     def process_order(self, order):
         success = False
@@ -138,12 +145,13 @@ class Controller:
             if share_delta < 0 and -share_delta > self._portfolio.get_shares(ticker):
                 # Liquidate
                 share_delta = -self._portfolio.get_shares(ticker)
-                fee = self._order_api._calculate_fee(share_delta*price)
+                # fee = self._order_api._calculate_fee(share_delta*price)
+                fee = 0.0
                 if fee > abs(share_delta*price):
                     return False
 
             self._portfolio.update_trade(ticker=ticker, price=price, share_delta=share_delta, fee=fee)
-            self._logger.debug('Trade on %s for %s shares at %s with fee %s' % (ticker,share_delta,price, fee))
+            self._logger.info(f'Trade on {ticker} for {share_delta} shares at {price} with fee {fee}')
             return True
 
         return False
@@ -192,7 +200,7 @@ class Backtester:
         root = logging.getLogger()
         root.setLevel(level=logging.DEBUG)
         import os
-        filepath = 'run.log'
+        filepath = '../pybacktester/run.log'
         if os.path.exists(filepath):
             os.remove(filepath)
 
